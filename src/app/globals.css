@@ -1,0 +1,138 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Lora:ital,wght@0,400..700;1,400..700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400..800;1,6..72,400..800&display=swap');
+@import "tailwindcss";
+
+:root {
+  --font-masthead: 'Cinzel', 'Playfair Display', Georgia, serif;
+  --font-headline: 'Playfair Display', 'Newsreader', Georgia, serif;
+  --font-body: 'Lora', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  --news-paper: #fcfbf7;
+  --news-paper-light: #ffffff;
+  --news-ink: #111111;
+  --news-ink-muted: #524e49;
+  --news-rule: #1e1b18;
+  --news-rule-light: #dfdad0;
+  --news-accent-red: #058c9a;
+  --news-accent-teal: #058c9a;
+  --news-accent-gold: #b45309;
+}
+
+body {
+  background-color: var(--news-paper);
+  color: var(--news-ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Masthead typography */
+.font-masthead {
+  font-family: var(--font-masthead);
+}
+
+.font-headline {
+  font-family: var(--font-headline);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-ui {
+  font-family: var(--font-ui);
+}
+
+/* Classic Newspaper Rules */
+.newspaper-double-bottom {
+  border-bottom: 4px double var(--news-rule);
+}
+
+.newspaper-double-top {
+  border-top: 4px double var(--news-rule);
+}
+
+.newspaper-heavy-top {
+  border-top: 3px solid var(--news-rule);
+}
+
+.newspaper-heavy-bottom {
+  border-bottom: 3px solid var(--news-rule);
+}
+
+.newspaper-thin-rule {
+  border-color: var(--news-rule-light);
+}
+
+/* Drop-cap */
+.drop-cap::first-letter {
+  float: left;
+  font-family: var(--font-headline);
+  font-size: 3.8rem;
+  line-height: 0.82;
+  padding-top: 0.3rem;
+  padding-right: 0.55rem;
+  padding-bottom: 0.1rem;
+  font-weight: 800;
+  color: #111;
+}
+
+/* Editorial column rules */
+.newspaper-grid-border {
+  border-color: #dfdad0;
+}
+
+/* Subtle newspaper texture overlay */
+.newspaper-texture {
+  background-image: radial-gradient(#0000000a 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+/* Marquee / ticker animation */
+@keyframes ticker {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-ticker {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: ticker 42s linear infinite;
+}
+
+.animate-ticker:hover {
+  animation-play-state: paused;
+}
+
+/* Stamp / Seal effect */
+.editorial-stamp {
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 800;
+  border: 2px solid var(--news-accent-red);
+  color: var(--news-accent-red);
+  padding: 0.15rem 0.5rem;
+  font-family: var(--font-ui);
+  transform: rotate(-2deg);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1ede5;
+}
+::-webkit-scrollbar-thumb {
+  background: #b5ada2;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8e8579;
+}
