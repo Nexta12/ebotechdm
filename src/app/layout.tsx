@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -34,6 +35,17 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.png" />
       </head>
       <body className="bg-[#fcfbf7] text-[#111111] antialiased min-h-screen flex flex-col justify-between">
+        <NextTopLoader
+          color="#058c9a"
+          initialPosition={0.08}
+          crawlSpeed={200}
+          height={3}
+          crawl={true}
+          showSpinner={false}
+          easing="ease"
+          speed={200}
+          shadow="0 0 10px #058c9a,0 0 5px #058c9a"
+        />
         <Header />
         <div className="grow">{children}</div>
         <Footer />
