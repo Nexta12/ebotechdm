@@ -3,22 +3,40 @@ import nodemailer from "nodemailer";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const contentType = req.headers.get("content-type") || "";
+    let fields: Record<string, any> = {};
+    let idFile: { name: string; size: number; type: string; arrayBuffer: () => Promise<ArrayBuffer> } | null = null;
+
+    if (contentType.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      const rawFile = formData.get("idDocument") as any;
+      if (rawFile && typeof rawFile === "object" && typeof rawFile.arrayBuffer === "function" && rawFile.size > 0) {
+        idFile = rawFile;
+      }
+      formData.forEach((value, key) => {
+        if (key !== "idDocument") {
+          fields[key] = value;
+        }
+      });
+    } else {
+      fields = await req.json();
+    }
+
     const {
       fullName,
       email,
       phone,
       lga,
+      hometown,
       currentTown,
       gender,
-      ageGroup,
       educationLevel,
       selectedTrack,
       skillLevel,
       deviceCategory,
       motivation,
       agreement,
-    } = body;
+    } = fields;
 
     // Basic validation
     if (!fullName || !email || !phone || !lga || !selectedTrack) {
@@ -28,9 +46,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!agreement) {
+    const isAgreed = agreement === true || agreement === "true";
+    if (!isAgreed) {
       return NextResponse.json(
         { error: "Program commitment agreement must be accepted." },
+        { status: 400 }
+      );
+    }
+
+    // Check file size (max 5MB)
+    if (idFile && idFile.size > 5 * 1024 * 1024) {
+      return NextResponse.json(
+        { error: "Uploaded identification document must be under 5MB." },
         { status: 400 }
       );
     }
@@ -68,12 +95,30 @@ export async function POST(req: NextRequest) {
         },
       });
 
+      // Prepare attachments if file uploaded
+      const attachments: Array<{
+        filename: string;
+        content: Buffer;
+        contentType?: string;
+      }> = [];
+
+      if (idFile) {
+        const fileBuffer = Buffer.from(await idFile.arrayBuffer());
+        attachments.push({
+          filename: idFile.name,
+          content: fileBuffer,
+          contentType: idFile.type || "application/octet-stream",
+        });
+      }
+
       // 1. Email to Portal Administrators
+      const originDisplay = hometown ? `${hometown}, ${lga} LGA` : `${lga} LGA`;
       const adminMailOptions = {
         from: `"${fromName}" <${fromEmail}>`,
         to: adminEmail,
         replyTo: `"${fullName}" <${email}>`,
-        subject: `[New Candidate Application] ${appId} - ${fullName} (${lga} LGA)`,
+        subject: `[New Candidate Application] ${appId} - ${fullName} (${originDisplay})`,
+        attachments: attachments.length > 0 ? attachments : undefined,
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 650px; margin: 0 auto; border: 1px solid #dfdad0; border-radius: 4px; overflow: hidden; color: #1e1b18;">
             <div style="background-color: #058c9a; color: white; padding: 18px 24px;">
@@ -99,9 +144,11 @@ export async function POST(req: NextRequest) {
                 <tr><td style="color: #78716c; padding: 4px 0;">Email:</td><td><a href="mailto:${email}" style="color: #058c9a;">${email}</a></td></tr>
                 <tr><td style="color: #78716c; padding: 4px 0;">Phone / WhatsApp:</td><td><a href="tel:${phone}" style="color: #058c9a;">${phone}</a></td></tr>
                 <tr><td style="color: #78716c; padding: 4px 0;">Ebonyi LGA:</td><td><strong>${lga} LGA</strong></td></tr>
+                <tr><td style="color: #78716c; padding: 4px 0;">Hometown / Community:</td><td><strong>${hometown || "Not specified"}</strong></td></tr>
                 <tr><td style="color: #78716c; padding: 4px 0;">Current Town / Location:</td><td>${currentTown || "Not specified"}</td></tr>
-                <tr><td style="color: #78716c; padding: 4px 0;">Gender / Age Group:</td><td>${gender} | ${ageGroup}</td></tr>
-                <tr><td style="color: #78716c; padding: 4px 0;">Highest Education:</td><td>${educationLevel}</td></tr>
+                <tr><td style="color: #78716c; padding: 4px 0;">Gender:</td><td>${gender || "Not specified"}</td></tr>
+                <tr><td style="color: #78716c; padding: 4px 0;">Highest Education:</td><td>${educationLevel || "Not specified"}</td></tr>
+                <tr><td style="color: #78716c; padding: 4px 0;">Means of Identification:</td><td><strong>${idFile ? `Attached (${(idFile as any).name})` : "Not provided"}</strong></td></tr>
               </table>
 
               <h3 style="font-size: 14px; text-transform: uppercase; color: #44403c; border-bottom: 1px solid #e7e5e4; padding-bottom: 6px; margin-top: 24px;">2. Program Track & Device Access</h3>
@@ -148,7 +195,9 @@ export async function POST(req: NextRequest) {
                 <div style="font-size: 22px; font-weight: bold; font-family: monospace; color: #15803d;">${appId}</div>
                 <p style="margin: 8px 0 0 0; font-size: 13px; color: #166534;">
                   <strong>Assigned Track:</strong> ${selectedTrack}<br/>
-                  <strong>LGA of Origin:</strong> ${lga} LGA
+                  <strong>Origin:</strong> ${hometown ? `${hometown}, ` : ""}${lga} LGA, Ebonyi State<br/>
+                  <strong>Device Category:</strong> ${deviceCategory}<br/>
+                  <strong>Means of ID:</strong> ${idFile ? `Attached (${(idFile as any).name})` : "Not submitted"}
                 </p>
               </div>
 

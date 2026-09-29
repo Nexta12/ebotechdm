@@ -9,6 +9,9 @@ import {
   CheckCircle2,
   Send,
   Printer,
+  UploadCloud,
+  FileCheck,
+  X,
 } from "lucide-react";
 
 const EBONYI_LGAS = [
@@ -27,15 +30,149 @@ const EBONYI_LGAS = [
   "Onicha",
 ];
 
+export const EBONYI_HOMETOWNS: Record<string, string[]> = {
+  "Abakaliki": [
+    "Azuiyiokwu",
+    "Nkaliki",
+    "Kpirikpiri",
+    "Azumini",
+    "Ishieke",
+    "Izzi Unuhu",
+    "Amike Aba",
+    "Sharon",
+    "Abakpa",
+    "Edda (Abakaliki)",
+  ],
+  "Afikpo North": [
+    "Ehugbo (Afikpo)",
+    "Ozizza",
+    "Unwana",
+    "Itim",
+    "Ohaisu",
+    "Ndukwe",
+    "Kpoghirikpo",
+    "Ugwuegu",
+    "Amasiri",
+  ],
+  "Afikpo South (Edda)": [
+    "Nguzu Edda",
+    "Ebunwana Edda",
+    "Owutu Edda",
+    "Ekoli Edda",
+    "Amangwu Edda",
+    "Oso Edda",
+    "Libolo Edda",
+    "Ogbu Edda",
+  ],
+  "Ebonyi": [
+    "Ugbodo",
+    "Abakpa",
+    "Kpirikpiri",
+    "Nkaliki",
+    "Sharon",
+    "Agbaja",
+    "Mgbabo",
+    "Ishieke",
+  ],
+  "Ezza North": [
+    "Umuoghara",
+    "Oriuzor",
+    "Ekka",
+    "Ogboji",
+    "Oshiri",
+    "Achara",
+    "Okposhi",
+    "Inyere",
+    "Umuezeoka",
+  ],
+  "Ezza South": [
+    "Onueke",
+    "Amana",
+    "Amagu",
+    "Idembia",
+    "Igbegu",
+    "Echara",
+    "Amaezekwe",
+  ],
+  "Ikwo": [
+    "Echara Ikwo",
+    "Alike",
+    "Agubia",
+    "Ndufu Alike",
+    "Enyibichiri",
+    "Noyo",
+    "Inyimagu",
+    "Ekpelu",
+    "Okpuitumo",
+    "Igboji",
+  ],
+  "Ishielu": [
+    "Ezillo",
+    "Ntezi",
+    "Nkalaha",
+    "Iyionu",
+    "Okpoto",
+    "Ezzagu",
+    "Agba",
+    "Azuinyaba",
+    "Amazu",
+  ],
+  "Ivo": [
+    "Ishiagu",
+    "Akaeze",
+    "Ameke",
+    "Ihie",
+    "Okue",
+    "Ngwogwo",
+    "Ogwor",
+  ],
+  "Izzi": [
+    "Iboko",
+    "Ndieze",
+    "Igbeagu",
+    "Agbaja",
+    "Ezza Inyimagu",
+    "Ndiebor",
+    "Ndiogbu",
+  ],
+  "Ohaozara": [
+    "Okposi",
+    "Uburu",
+    "Ugwulangwu",
+    "Enu-Uburu",
+    "Obiozara",
+  ],
+  "Ohaukwu": [
+    "Ezzamgbo",
+    "Ngbo",
+    "Effium",
+    "Umuogudu Akpu",
+    "Ukwagba",
+    "Okwo Ngbo",
+    "Ndulo Ngbo",
+  ],
+  "Onicha": [
+    "Isu",
+    "Onicha Igboeze",
+    "Oshiri",
+    "Ukawu",
+    "Aba Omege",
+    "Agbabor",
+  ],
+};
+
 export default function ScholarshipPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [idFile, setIdFile] = useState<File | null>(null);
   const [submittedData, setSubmittedData] = useState<{
     appId: string;
     fullName: string;
     email: string;
     phone: string;
     lga: string;
+    hometown: string;
+    idFileName?: string | null;
     trackTitle: string;
     deviceCategory: string;
     date: string;
@@ -47,9 +184,10 @@ export default function ScholarshipPage() {
     email: "",
     phone: "",
     lga: "Abakaliki",
+    hometown: "",
+    customHometown: "",
     currentTown: "",
     gender: "Female",
-    ageGroup: "18-24",
     educationLevel: "Undergraduate",
     selectedTrack: SCHOLARSHIP_TRACKS[0].title,
     skillLevel: "Level 1 – Basic User",
@@ -67,13 +205,44 @@ export default function ScholarshipPage() {
     if (type === "checkbox") {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData((prev) => ({ ...prev, [name]: checked }));
+    } else if (name === "lga") {
+      setFormData((prev) => ({
+        ...prev,
+        lga: value,
+        hometown: "",
+        customHometown: "",
+      }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("File size exceeds 5MB limit. Please choose a smaller file.");
+      e.target.value = "";
+      return;
+    }
+
+    setIdFile(file);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const resolvedHometown =
+      formData.hometown === "Other"
+        ? formData.customHometown.trim()
+        : (formData.hometown.trim() || formData.customHometown.trim());
+
+    if (!resolvedHometown) {
+      alert("Please select or enter your Hometown / Autonomous Community.");
+      return;
+    }
+
     if (!formData.agreement) {
       alert("Please accept the program commitment agreement.");
       return;
@@ -82,13 +251,23 @@ export default function ScholarshipPage() {
     setIsSubmitting(true);
     setErrorMessage(null);
 
+    const payload = {
+      ...formData,
+      hometown: resolvedHometown,
+    };
+
+    const submitFormData = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      submitFormData.append(key, String(value));
+    });
+    if (idFile) {
+      submitFormData.append("idDocument", idFile);
+    }
+
     try {
       const res = await fetch("/api/scholarship/apply", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+        body: submitFormData,
       });
 
       const data = await res.json();
@@ -103,6 +282,8 @@ export default function ScholarshipPage() {
         email: formData.email,
         phone: formData.phone,
         lga: formData.lga,
+        hometown: resolvedHometown,
+        idFileName: idFile ? idFile.name : null,
         trackTitle: formData.selectedTrack,
         deviceCategory: formData.deviceCategory,
         date: new Date().toLocaleDateString("en-US", {
@@ -210,7 +391,10 @@ export default function ScholarshipPage() {
 
             <div className="mt-3 text-xs space-y-1 font-body text-emerald-900">
               <p>
-                <strong>Applicant:</strong> {submittedData.fullName} ({submittedData.lga} LGA)
+                <strong>Applicant:</strong> {submittedData.fullName}
+              </p>
+              <p>
+                <strong>Origin:</strong> {submittedData.hometown ? `${submittedData.hometown}, ` : ""}{submittedData.lga} LGA, Ebonyi State
               </p>
               <p>
                 <strong>Assigned Track:</strong> {submittedData.trackTitle}
@@ -218,6 +402,11 @@ export default function ScholarshipPage() {
               <p>
                 <strong>Device Access:</strong> {submittedData.deviceCategory}
               </p>
+              {submittedData.idFileName && (
+                <p>
+                  <strong>Means of ID:</strong> Attached ({submittedData.idFileName})
+                </p>
+              )}
               <p className="text-[11px] text-emerald-800 pt-1">
                 Admissions notifications and orientation links will be sent via WhatsApp and Email to <strong>{submittedData.phone}</strong>.
               </p>
@@ -255,12 +444,12 @@ export default function ScholarshipPage() {
             {/* 1. Identity & Origin */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#1e1b18] border-b border-[#dfdad0] pb-1 mb-3">
-                1. Personal & Indigene Information
+                1. Personal Information
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
                   <label className="block text-xs font-bold text-[#292524] mb-1">
-                    Full Legal Name *
+                    Full Name *
                   </label>
                   <input
                     type="text"
@@ -311,7 +500,7 @@ export default function ScholarshipPage() {
                     name="lga"
                     value={formData.lga}
                     onChange={handleInputChange}
-                    className="w-full bg-[#fbf9f4] border border-[#1e1b18] p-2 text-xs text-black rounded-xs focus:outline-none"
+                    className="w-full bg-[#fbf9f4] border border-[#1e1b18] p-2 text-xs text-black rounded-xs focus:outline-none font-medium"
                   >
                     {EBONYI_LGAS.map((lga) => (
                       <option key={lga} value={lga}>
@@ -319,6 +508,38 @@ export default function ScholarshipPage() {
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#292524] mb-1">
+                    Hometown*
+                  </label>
+                  <select
+                    required
+                    name="hometown"
+                    value={formData.hometown}
+                    onChange={handleInputChange}
+                    className="w-full bg-[#fbf9f4] border border-[#1e1b18] p-2 text-xs text-black rounded-xs focus:outline-none"
+                  >
+                    <option value="">-- Select Community in {formData.lga} --</option>
+                    {(EBONYI_HOMETOWNS[formData.lga] || []).map((town) => (
+                      <option key={town} value={town}>
+                        {town}
+                      </option>
+                    ))}
+                    <option value="Other">Other (Specify village/community)...</option>
+                  </select>
+                  {formData.hometown === "Other" && (
+                    <input
+                      type="text"
+                      required
+                      name="customHometown"
+                      value={formData.customHometown}
+                      onChange={handleInputChange}
+                      placeholder="Specify your village or autonomous community"
+                      className="mt-2 w-full bg-[#fbf9f4] border border-[#058c9a] p-2 text-xs text-black rounded-xs focus:outline-none focus:ring-1 focus:ring-[#058c9a]"
+                    />
+                  )}
                 </div>
 
                 <div>
@@ -337,20 +558,83 @@ export default function ScholarshipPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-[#292524] mb-1">
-                    Age Bracket
+                    Gender *
                   </label>
                   <select
-                    name="ageGroup"
-                    value={formData.ageGroup}
+                    name="gender"
+                    value={formData.gender}
                     onChange={handleInputChange}
                     className="w-full bg-[#fbf9f4] border border-[#1e1b18] p-2 text-xs text-black rounded-xs focus:outline-none"
                   >
-                    <option value="Under 18">Under 18</option>
-                    <option value="18-24">18 - 24 years</option>
-                    <option value="25-30">25 - 30 years</option>
-                    <option value="31-35">31 - 35 years</option>
-                    <option value="36+">36+ years</option>
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
                   </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#292524] mb-1">
+                    Highest Education Level
+                  </label>
+                  <select
+                    name="educationLevel"
+                    value={formData.educationLevel}
+                    onChange={handleInputChange}
+                    className="w-full bg-[#fbf9f4] border border-[#1e1b18] p-2 text-xs text-black rounded-xs focus:outline-none"
+                  >
+                    <option value="Secondary / SSCE">Secondary / SSCE Candidate</option>
+                    <option value="Undergraduate">Undergraduate Student</option>
+                    <option value="Graduate / HND / BSc">Graduate (HND / BSc)</option>
+                    <option value="Postgraduate">Postgraduate</option>
+                    <option value="Vocational / Other">Vocational / Other</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-[#292524] mb-1">
+                    Means of Identification <span className="font-normal text-[#78716c]">(Recommended: NIN Slip, Voter&apos;s Card, Student ID, LGA Certificate of Origin, Driver&apos;s License)</span>
+                  </label>
+                  
+                  {!idFile ? (
+                    <label className="border-2 border-dashed border-[#dfdad0] hover:border-[#058c9a] bg-[#fbf9f4] hover:bg-[#f0f9fa] transition-colors rounded-xs p-4 flex flex-col items-center justify-center cursor-pointer text-center group">
+                      <input
+                        type="file"
+                        accept="image/*,application/pdf"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                      <UploadCloud className="w-6 h-6 text-[#78716c] group-hover:text-[#058c9a] mb-1.5 transition-colors" />
+                      <span className="text-xs font-bold text-[#1e1b18] group-hover:text-[#058c9a]">
+                        Click Here
+                      </span>
+                      <span className="text-[11px] text-[#78716c] mt-0.5">
+                        Supports PDF, PNG, JPG, or JPEG (Max 5MB)
+                      </span>
+                    </label>
+                  ) : (
+                    <div className="flex items-center justify-between bg-[#f0f9fa] border border-[#058c9a]/40 p-2.5 rounded-xs">
+                      <div className="flex items-center space-x-2.5 overflow-hidden">
+                        <FileCheck className="w-5 h-5 text-[#058c9a] shrink-0" />
+                        <div className="overflow-hidden">
+                          <p className="text-xs font-bold text-[#1e1b18] truncate">
+                            {idFile.name}
+                          </p>
+                          <p className="text-[10px] text-[#78716c]">
+                            {(idFile.size / (1024 * 1024)).toFixed(2)} MB • Ready to attach to application
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIdFile(null)}
+                        className="text-[#78716c] hover:text-red-600 p-1 text-xs font-bold transition-colors ml-2 shrink-0 flex items-center space-x-1"
+                        title="Remove file"
+                      >
+                        <X className="w-4 h-4" />
+                        <span className="text-[11px]">Remove</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -358,12 +642,12 @@ export default function ScholarshipPage() {
             {/* 2. Track & Device Assessment */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-[#1e1b18] border-b border-[#dfdad0] pb-1 mb-3">
-                2. Track Selection & Device Access
+                2. Select Course
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-bold text-[#292524] mb-1">
-                    Choose Your Preferred Course Track (1 Track Only) *
+                    Choose Your Preferred Course (1 Course Only) *
                   </label>
                   <select
                     required
