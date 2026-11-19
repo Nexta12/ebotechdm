@@ -1,25 +1,14 @@
 import type { Metadata } from "next";
-import NextTopLoader from "nextjs-toploader";
 import "./globals.css";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import WarningMessage from "@/components/WarningMessage";
 
 export const metadata: Metadata = {
-  title: "Ebotech Digital Media | The Voice of Truth & Digital Innovation",
+  title: "Website Temporarily Unreachable",
   description:
-    "Ebotech Digital Media is a premier independent newspaper providing breaking national news, technology intelligence, investigative reports, and the 2026 Youth Skill Acquisition Scholarship.",
-  keywords: [
-    "Ebotech Digital Media",
-    "Nigerian Newspaper",
-    "African Tech News",
-    "Digital Skills Scholarship",
-    "Skill Acquisition Program",
-    "Investigative Journalism",
-  ],
-  icons: {
-    icon: "/favicon.png",
-    shortcut: "/favicon.png",
-    apple: "/favicon.png",
+    "This Website is temporarily unreacheable, Please contact the server administrators or the hosting company of you are the owner of the website.",
+  robots: {
+    index: false,
+    follow: false,
   },
 };
 
@@ -29,26 +18,24 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" style={{ backgroundColor: "#ffffff" }}>
       <head>
-        <link rel="icon" href="/favicon.png" type="image/png" />
-        <link rel="apple-touch-icon" href="/favicon.png" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body className="bg-[#fcfbf7] text-[#111111] antialiased min-h-screen flex flex-col justify-between">
-        <NextTopLoader
-          color="#058c9a"
-          initialPosition={0.08}
-          crawlSpeed={200}
-          height={3}
-          crawl={true}
-          showSpinner={false}
-          easing="ease"
-          speed={200}
-          shadow="0 0 10px #058c9a,0 0 5px #058c9a"
-        />
-        <Header />
-        <div className="grow">{children}</div>
-        <Footer />
+      <body
+        style={{
+          backgroundColor: "#ffffff",
+          margin: 0,
+          padding: 0,
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+        className="bg-white text-gray-900 antialiased min-h-screen"
+      >
+        <WarningMessage />
       </body>
     </html>
   );
